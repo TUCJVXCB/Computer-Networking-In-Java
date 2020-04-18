@@ -14,51 +14,49 @@ public class WebServer {
         while (true) {
             Socket socket = serverSocket.accept();
             InputStream inputStream = socket.getInputStream();
-            OutputStream out = socket.getOutputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String readLine = reader.readLine();
+            OutputStream outputStream = socket.getOutputStream();
+            BufferedReader reader1 = new BufferedReader(new InputStreamReader(inputStream));
+            String readLine = reader1.readLine();
+
             String[] split = readLine.split(" ");
             if (split.length != 3) {
                 return;
             }
-            //相对地址
-            String path = split[1];
+            String path = split[1].substring(1);
+            File file = new File(path);
 
-            File file = new File(path.substring(1));
             if (!file.exists()) {
-                StringBuffer error = new StringBuffer();
-                error.append("HTTP/1.1 404 file not found\r\n");
-                error.append("Content-Type:text/html \r\n");
-                error.append("Content-Length:20 \r\n").append("\r\n");
-                error.append("<h1 >File Not Found..</h1>");
+                StringBuilder error = new StringBuilder();
+                error.append("HTTP/1.1 404 file not found\n");
+                error.append("Content-Type:text/html\r\n");
+                error.append("Content-Length:20\n").append("\n");
+                error.append("<h1>File Not Found..</h1>");
 
                 try {
-                    out.write(error.toString().getBytes());
-                    out.flush();
-                    out.close();
-                }catch (IOException e) {
+                    outputStream.write(error.toString().getBytes());
+                    outputStream.flush();
+                    outputStream.close();
+                }catch (IOException e){
                     e.printStackTrace();
                 }
             }
-            BufferedReader reader1 = new BufferedReader(new FileReader(file));
+
+            BufferedReader reader2 = new BufferedReader(new FileReader(file));
             StringBuilder sb = new StringBuilder();
+            String line;
 
-            String line = null;
-            while ((line = reader1.readLine()) != null) {
-                sb.append(line).append("\r\n");
+            sb.append("HTTP/1.1 200 OK\n");
+            sb.append("Content-Type:text/html\n");
+            sb.append("Content-Length:" + file.length() + "\n");
+            sb.append("\n");
+
+            while ((line = reader2.readLine()) != null) {
+                sb.append(line).append("\n");
             }
-
-            System.out.println(sb);
-
-            StringBuilder result = new StringBuilder();
-            result.append("HTTP/1.1 200 OK \r\n");
-            result.append("Content-Type:text/html \r\n");
-            result.append("Content-Length:" + file.length() + "\r\n");
-            result.append("\r\n" + sb.toString());
-            System.out.println(result);
-            out.write(result.toString().getBytes());
-            out.flush();
-            out.close();
+            System.out.println(sb.toString());
+            outputStream.write(sb.toString().getBytes());
+            outputStream.flush();
+            outputStream.close();
         }
     }
 }
